@@ -43,7 +43,7 @@ class FlickrClient: NSObject {
     // MARK: - Core Data Context
     
     var sharedContext: NSManagedObjectContext {
-        return CoreDataStackManager.sharedInstance().managedObjectContext!
+        return CoreDataStackManager.sharedInstance().managedObjectContext
     }
     
     // MARK: - Methods
@@ -89,7 +89,7 @@ class FlickrClient: NSObject {
             
             let task = session.dataTaskWithRequest(request) { data, response, downloadError in
                 
-                if let error = downloadError {
+                if let _ = downloadError {
                     
                     // Download failed
                     completionHandler(success: false, errorString: "Could not complete the request)")
@@ -97,12 +97,9 @@ class FlickrClient: NSObject {
                 } else {
                 
                     // Download succeeded
-                    var parsingError: NSError? = nil
-                    let parsedResult = NSJSONSerialization.JSONObjectWithData(
-                            data,
-                            options: NSJSONReadingOptions.AllowFragments,
-                            error: &parsingError
-                        ) as! NSDictionary
+                    let parsedResult = (try! NSJSONSerialization.JSONObjectWithData(
+                            data!,
+                            options: NSJSONReadingOptions.AllowFragments)) as! NSDictionary
                     
                     // Parse the page data
                     if let photosDictionary = parsedResult.valueForKey("photos") as? [String:AnyObject] {
@@ -126,7 +123,7 @@ class FlickrClient: NSObject {
                                 
                                 for photo in photosArray {
                                     
-                                    if let url = photo["url_m"] as? String {
+                                    if let _ = photo["url_m"] as? String {
                                         
                                         // Set up the dictionary to create the photo
                                         let dictionary: [String : AnyObject] = [
@@ -253,7 +250,7 @@ class FlickrClient: NSObject {
             
         }
         
-        return (!urlVars.isEmpty ? "?" : "") + join("&", urlVars)
+        return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
     }
 
 }

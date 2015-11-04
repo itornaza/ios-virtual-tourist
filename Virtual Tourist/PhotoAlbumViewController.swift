@@ -26,7 +26,7 @@ class PhotoAlbumViewController: UIViewController,
     
     // Core Data
     var sharedContext: NSManagedObjectContext {
-        return CoreDataStackManager.sharedInstance().managedObjectContext!
+        return CoreDataStackManager.sharedInstance().managedObjectContext
     }
     
     lazy var fetchedResultsController: NSFetchedResultsController = {
@@ -77,9 +77,13 @@ class PhotoAlbumViewController: UIViewController,
         
         // Start the fetch
         var error: NSError?
-        self.fetchedResultsController.performFetch(&error)
+        do {
+            try self.fetchedResultsController.performFetch()
+        } catch let error1 as NSError {
+            error = error1
+        }
         
-        if let error = error {
+        if let _ = error {
             self.alertView("Could not get images from flickr")
         }
     }
@@ -121,11 +125,11 @@ class PhotoAlbumViewController: UIViewController,
         dispatch_async(dispatch_get_main_queue(), {
             
             // Grab storyboard
-            var storyboard = UIStoryboard (name: "Main", bundle: nil)
+            let storyboard = UIStoryboard (name: "Main", bundle: nil)
             
             // Get the destination controller from the storyboard id
-            var nextVC = storyboard.instantiateViewControllerWithIdentifier("TravelLocationsViewController")
-                as! UIViewController
+            let nextVC = storyboard.instantiateViewControllerWithIdentifier("TravelLocationsViewController")
+                
             
             // Go to the destination controller
             self.presentViewController(nextVC, animated: false, completion: nil)
@@ -181,7 +185,7 @@ class PhotoAlbumViewController: UIViewController,
      *  Number of images in section
      */
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        let sectionInfo = self.fetchedResultsController.sections![section] as! NSFetchedResultsSectionInfo
+        let sectionInfo = self.fetchedResultsController.sections![section] 
         return sectionInfo.numberOfObjects
     }
     
@@ -210,17 +214,17 @@ class PhotoAlbumViewController: UIViewController,
         var photo: Photo // Holds the photo to be deleted
         
         // Define a cell
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath) as! PhotoAlbumCollectionViewCell
+        _ = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath) as! PhotoAlbumCollectionViewCell
         
         // Check for cell toggle condition
-        if let index = find(selectedIndexes, indexPath) {
+        if let index = selectedIndexes.indexOf(indexPath) {
             selectedIndexes.removeAtIndex(index)
         } else {
             selectedIndexes.append(indexPath)
         }
         
         // Force the cell to reload!
-        var paths = [indexPath]
+        let paths = [indexPath]
         self.collectionView.reloadItemsAtIndexPaths(paths)
         
         // Locate the photo to delete from core data using the index
@@ -228,8 +232,11 @@ class PhotoAlbumViewController: UIViewController,
         // shall be only one element in the selectedIndexes array
         photo = fetchedResultsController.objectAtIndexPath(selectedIndexes.first!) as! Photo
         
-        // Remove the associated photo from disk and cache
-        NSFileManager.defaultManager().removeItemAtPath(photo.posterPath, error: nil)
+        do {
+            // Remove the associated photo from disk and cache
+            try NSFileManager.defaultManager().removeItemAtPath(photo.posterPath)
+        } catch _ {
+        }
         photo.posterImage = nil // Triggers removal from the ImageCache
         
         // Remove the photo from core data
@@ -263,6 +270,7 @@ class PhotoAlbumViewController: UIViewController,
      *  May be called multiple times, once for each photo object that is added, deleted, or changed.
      *  We store the index paths into the three arrays.
      */
+    
     func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
         
         switch type{
@@ -333,7 +341,7 @@ class PhotoAlbumViewController: UIViewController,
             // Initiate the download under a task that can be cancelled
             let task = FlickrClient.sharedInstance().taskForImage(photo.posterPath) { imageData, error in
                 
-                if let downloadError = error {
+                if let _ = error {
                     self.alertView("Could not download images")
                     
                     // Handle UI elements on the main thread
@@ -385,13 +393,13 @@ class PhotoAlbumViewController: UIViewController,
         
         // Create and add the annotation from the given coordinates
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        var annotation = MKPointAnnotation()
+        let annotation = MKPointAnnotation()
         annotation.coordinate = coordinate
         self.mapView.addAnnotation(annotation)
         
         // Center map around the annotation
-        var span = MKCoordinateSpanMake(self.DEFAULT_SPAN, self.DEFAULT_SPAN)
-        var region = MKCoordinateRegion(center: coordinate, span: span)
+        let span = MKCoordinateSpanMake(self.DEFAULT_SPAN, self.DEFAULT_SPAN)
+        let region = MKCoordinateRegion(center: coordinate, span: span)
         mapView.setRegion(region, animated: true)
     }
     

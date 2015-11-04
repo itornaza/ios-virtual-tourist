@@ -24,7 +24,7 @@ class TravelLocationsViewController: UIViewController,
     // Core Data properties
     
     var sharedContext: NSManagedObjectContext {
-        return CoreDataStackManager.sharedInstance().managedObjectContext!
+        return CoreDataStackManager.sharedInstance().managedObjectContext
     }
     
     lazy var fetchedResultsController: NSFetchedResultsController = {
@@ -45,7 +45,7 @@ class TravelLocationsViewController: UIViewController,
     */
     var filePath : String {
         let manager = NSFileManager.defaultManager()
-        let url = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first as! NSURL
+        let url: NSURL = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
         return url.URLByAppendingPathComponent("mapRegionArchive").path!
     }
     
@@ -83,11 +83,7 @@ class TravelLocationsViewController: UIViewController,
      *  When the user taps on a dropped pin, we transit to the PhotoAlbumViewController
      *  and notify the controller about the selected pin
      */
-    func mapView(mapView: MKMapView!, didSelectAnnotationView view: MKAnnotationView!) {
-        
-        // Get the coordinates from this delegate method
-        let latitude = view.annotation.coordinate.latitude
-        let longitude = view.annotation.coordinate.longitude
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
         
         // Set the next view controller
         let nextVC = storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumViewController") as!
@@ -98,7 +94,7 @@ class TravelLocationsViewController: UIViewController,
         let storedPins = fetchedResultsController.fetchedObjects as! [Pin]
         
         // Assign the selected pin to the next controller for handling
-        nextVC.pin = self.locatePinFromAnnotation(view.annotation, storedPins: storedPins)
+        nextVC.pin = self.locatePinFromAnnotation(view.annotation!, storedPins: storedPins)
         
         // Segue to the next view controller
         self.presentViewController(nextVC, animated: false, completion: nil)
@@ -107,14 +103,14 @@ class TravelLocationsViewController: UIViewController,
     /**
      *  Get notified when the map region is changed
      */
-    func mapView(mapView: MKMapView!, regionDidChangeAnimated animated: Bool) {
+    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         saveMapRegion()
     }
     
     // MARK: - Gestures
     
     func configureLongTap(duration: CFTimeInterval) {
-        var longTap = UILongPressGestureRecognizer(target: self, action: "handleLongTap:")
+        let longTap = UILongPressGestureRecognizer(target: self, action: "handleLongTap:")
         longTap.minimumPressDuration = duration
         mapView.addGestureRecognizer(longTap)
     }
@@ -167,14 +163,17 @@ class TravelLocationsViewController: UIViewController,
         ]
         
         // Create the pin using the dictionary
-        let pinToBeAdded = Pin(dictionary: dictionary, context: sharedContext)
+        _ = Pin(dictionary: dictionary, context: sharedContext)
         
         // Add pin to Core Data, on the main thread
         dispatch_async(dispatch_get_main_queue()) {
             CoreDataStackManager.sharedInstance().saveContext()
             
-            // Fetch from core data to include the new pin
-            self.fetchedResultsController.performFetch(nil)
+            do {
+                // Fetch from core data to include the new pin
+                try self.fetchedResultsController.performFetch()
+            } catch _ {
+            }
         }
     }
     
@@ -185,8 +184,11 @@ class TravelLocationsViewController: UIViewController,
     */
     func displayStoredPins() {
         
-        // Fetch pins from core data
-        self.fetchedResultsController.performFetch(nil)
+        do {
+            // Fetch pins from core data
+            try self.fetchedResultsController.performFetch()
+        } catch _ {
+        }
         
         // Get the pins from the Core Data
         let storedPins = fetchedResultsController.fetchedObjects as! [Pin]
@@ -202,7 +204,7 @@ class TravelLocationsViewController: UIViewController,
      *  Drop a pin given it's coordinates
      */
     func createAnnotation(coordinates: CLLocationCoordinate2D) {
-        var annotation = MKPointAnnotation()
+        let annotation = MKPointAnnotation()
         annotation.coordinate = coordinates
         self.mapView.addAnnotation(annotation)
     }
