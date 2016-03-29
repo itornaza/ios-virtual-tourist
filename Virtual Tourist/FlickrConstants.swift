@@ -36,14 +36,14 @@ extension FlickrClient {
         static let ACCURACY             = "6"
         
         // Support 3 cols by 7 rows on the collection view
-        static let PER_PAGE = "21"
+        static let PER_PAGE             = "21"
         
         // Area boundaries to download images from
         static let BOUNDING_BOX_HALF_WIDTH  = 0.1
         static let BOUNDING_BOX_HALF_HEIGHT = 0.1
-        static let LAT_MIN  = -90.0
-        static let LAT_MAX  = 90.0
-        static let LONG_MIN = -180.0
-        static let LONG_MAX = 180.0
+        static let LAT_MIN                  = -90.0
+        static let LAT_MAX                  = 90.0
+        static let LONG_MIN                 = -180.0
+        static let LONG_MAX                 = 180.0
     }
 }

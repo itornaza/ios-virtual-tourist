@@ -18,9 +18,9 @@ class Photo: NSManagedObject {
     // MARK: - Properties
     
     struct Keys {
-        static let Id = "id"
-        static let PosterPath = "poster_path"
-        static let Downloaded = "downloaded"
+        static let Id           = "id"
+        static let PosterPath   = "poster_path"
+        static let Downloaded   = "downloaded"
     }
     
     // MARK: - Properties converted to Core Data Attributes
@@ -43,16 +43,12 @@ class Photo: NSManagedObject {
     
     // MARK: - Constructors
     
-    /**
-     *  Standard Core Data init method
-     */
+    /// Standard Core Data init method
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }
     
-    /**
-     *  The two argument init method
-     */
+    /// The two argument init method
     init(dictionary: [String : AnyObject], context: NSManagedObjectContext) {
 
         // Get the entity from the Virtual_Tourist.xcdatamodeld

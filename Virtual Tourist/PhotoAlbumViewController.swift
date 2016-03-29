@@ -11,14 +11,15 @@ import MapKit
 import CoreData
 
 class PhotoAlbumViewController: UIViewController,
-                                MKMapViewDelegate,
                                 UICollectionViewDataSource,
                                 UICollectionViewDelegate,
+                                MKMapViewDelegate,
                                 NSFetchedResultsControllerDelegate {
     
     // MARK: - Properties
     
-    var pin: Pin!   // Gets the pin that the user selected on the map
+    // Gets the pin that the user selected on the map
+    var pin: Pin!
     
     // Constants
     let COLS_PER_ROW: CGFloat = 3.0
@@ -163,9 +164,7 @@ class PhotoAlbumViewController: UIViewController,
     
     // MARK: - Alerts
     
-    /**
-     *  Throws an alert view to display error messages
-     */
+    /// Throws an alert view to display error messages
     func alertView(message: String) {
         dispatch_async(dispatch_get_main_queue(), {
             let alertController = UIAlertController(title: "Error!", message: message, preferredStyle: .Alert)
@@ -181,17 +180,13 @@ class PhotoAlbumViewController: UIViewController,
         return self.fetchedResultsController.sections?.count ?? 0
     }
 
-    /**
-     *  Number of images in section
-     */
+    /// Number of images in section
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let sectionInfo = self.fetchedResultsController.sections![section] 
         return sectionInfo.numberOfObjects
     }
     
-    /**
-     *  Cell for item at index path
-     */
+    /// Cell for item at index path
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath)
         -> UICollectionViewCell {
             
@@ -205,16 +200,15 @@ class PhotoAlbumViewController: UIViewController,
         return cell
     }
     
-    /**
-     *  Did select item at index path to delete an image
-     */
+    /// Did select item at index path to delete an image
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
         
         // Local variables
         var photo: Photo // Holds the photo to be deleted
         
         // Define a cell
-        _ = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath) as! PhotoAlbumCollectionViewCell
+        _ = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath)
+            as! PhotoAlbumCollectionViewCell
         
         // Check for cell toggle condition
         if let index = selectedIndexes.indexOf(indexPath) {
@@ -228,8 +222,7 @@ class PhotoAlbumViewController: UIViewController,
         self.collectionView.reloadItemsAtIndexPaths(paths)
         
         // Locate the photo to delete from core data using the index
-        // Note: Since we are deleting one image at a time, there
-        // shall be only one element in the selectedIndexes array
+        // Note: Since we are deleting one image at a time, there shall be only one element in the selectedIndexes array
         photo = fetchedResultsController.objectAtIndexPath(selectedIndexes.first!) as! Photo
         
         do {
@@ -255,9 +248,7 @@ class PhotoAlbumViewController: UIViewController,
     
     // MARK: - Fetched Results Controller Delegate
     
-    /**
-     *  We are about to handle some new changes
-     */
+    /// We are about to handle some new changes
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
         
         // Start out with empty arrays for each change type
@@ -266,15 +257,9 @@ class PhotoAlbumViewController: UIViewController,
         updatedIndexPaths = [NSIndexPath]()
     }
     
-    /**
-     *  May be called multiple times, once for each photo object that is added, deleted, or changed.
-     *  We store the index paths into the three arrays.
-     */
-    
+    /// May be called multiple times, once for each photo object that is added, deleted, or changed. We store the index paths into the three arrays
     func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
-        
         switch type{
-            
         case .Insert:
             insertedIndexPaths.append(newIndexPath!)
             break
@@ -289,39 +274,26 @@ class PhotoAlbumViewController: UIViewController,
         }
     }
     
-    /**
-     *  This method is invoked after all of the changed in the current batch have been collected
-     *  into the three index path arrays (insert, delete, and upate). We now need to loop through the
-     *  arrays and perform the changes.
-     *
-     *  The most interesting thing about the method is the collection view's "performBatchUpdates" method.
-     *  Notice that all of the changes are performed inside a closure that is handed to the collection view.
-     */
+    /// This method is invoked after all of the changed in the current batch have been collected into the three index path arrays (insert, delete, and upate). We now need to loop through the arrays and perform the changes. The most interesting thing about the method is the collection view's "performBatchUpdates" method. Notice that all of the changes are performed inside a closure that is handed to the collection view.
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
-        
         collectionView.performBatchUpdates( { () -> Void in
-            
             for indexPath in self.insertedIndexPaths {
                 self.collectionView.insertItemsAtIndexPaths([indexPath])
             }
-            
             for indexPath in self.deletedIndexPaths {
                 self.collectionView.deleteItemsAtIndexPaths([indexPath])
             }
-            
             for indexPath in self.updatedIndexPaths {
                 self.collectionView.reloadItemsAtIndexPaths([indexPath])
             }
-            
-            }, completion: nil)
+        }, completion: nil)
     }
     
     // MARK: - Helpers
     
     func configureCell(cell: PhotoAlbumCollectionViewCell, indexPath: NSIndexPath) {
             
-        // Create a temporary variable  to hold the value that will be assigned 
-        // to the cell imageView at the end of this func
+        // Create a temporary variable  to hold the value that will be assigned to the cell imageView at the end of this func
         var posterImage = UIImage(named: "imagePlaceholder")
         
         // Get the indexed photo from the core data
@@ -383,9 +355,7 @@ class PhotoAlbumViewController: UIViewController,
         cell.imageView!.image = posterImage
     }
     
-    /**
-     *  Displays a pin at the desired location
-     */
+    /// Displays a pin at the desired location
     func showPinOnMap(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
 
         // Set the delegate
@@ -403,9 +373,7 @@ class PhotoAlbumViewController: UIViewController,
         mapView.setRegion(region, animated: true)
     }
     
-    /**
-     *  Checks whether to enable the new collection button
-     */
+    /// Checks whether to enable the new collection button
     func checkNewCollectionButton() {
         
         // Use core data to get the photos for the selected pin
@@ -423,22 +391,18 @@ class PhotoAlbumViewController: UIViewController,
         
     }
     
-    /**
-     *  Set the current page for the pin to the next legitimate value
-     */
+    /// Set the current page for the pin to the next legitimate value
     func updateCurrentPage() {
         if pin.currentPage >= pin.totalPages {
             pin.currentPage = 1
         } else {
-            pin.currentPage++
+            pin.currentPage += 1
         }
     }
     
     // MARK: - Aesthetics
     
-    /**
-     *  Configure the collection view layout
-     */
+    /// Configure the collection view layout
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
@@ -455,5 +419,4 @@ class PhotoAlbumViewController: UIViewController,
     func configureUI() {
         self.collectionView.backgroundColor = UIColor.whiteColor()
     }
-    
 }

@@ -48,9 +48,7 @@ class FlickrClient: NSObject {
     
     // MARK: - Methods
     
-    /**
-     *  Set the method arguments
-     */
+    /// Set the method arguments
     func getMethodArguments(pin: Pin) -> [String: AnyObject] {
         
         // Set the method arguments
@@ -69,9 +67,7 @@ class FlickrClient: NSObject {
         return methodArguments as [String : AnyObject]
     }
     
-    /**
-    *  Get the urls from the current pin page and save them to CoreData
-    */
+    /// Get the urls from the current pin page and save them to CoreData
     func getPhotosURLs(pin: Pin, completionHandler: (success: Bool, errorString: String?) -> Void) {
         
             // Get the method arguments adjusted for the pin
@@ -172,33 +168,24 @@ class FlickrClient: NSObject {
             task.resume()
     }
 
-    /**
-     *  Use task to download image data so it can be cancelled 
-     *  from the collection view cell
-     */
+    /// Use task to download image data so it can be cancelled from the collection view cell
     func taskForImage(filePath: String, completionHandler :(imageData:NSData?, error:NSError?) -> Void)-> NSURLSessionTask {
-        
         let url = NSURL(string: filePath)!
         let request = NSURLRequest(URL: url)
-        
         let task = session.dataTaskWithRequest(request) { data, response, downloadError in
-            
             if let error = downloadError {
                 completionHandler(imageData: nil, error: error)
             } else {
                 completionHandler(imageData: data, error: nil)
             }
         }
-        
         task.resume()
         return task
     }
     
     // MARK: - Helpers
     
-    /**
-     * Create the box on the map from which the images will be pulled
-     */
+    /// Create the box on the map from which the images will be pulled
     func createBoundingBoxString(pin: Pin) -> String {
         
         // Convert coordinates to Double values to use with max and min
@@ -230,13 +217,9 @@ class FlickrClient: NSObject {
         return "\(bottomLeftLong),\(bottomLeftLat),\(topRightLong),\(topRightLat)"
     }
     
-    /**
-     * Given a dictionary of parameters, convert to a string for a url
-     */
+    /// Given a dictionary of parameters, convert to a string for a url
     func escapedParameters(parameters: [String : AnyObject]) -> String {
-        
         var urlVars = [String]()
-        
         for (key, value) in parameters {
             
             //Make sure that it is a string value
@@ -249,7 +232,6 @@ class FlickrClient: NSObject {
             urlVars += [key + "=" + "\(escapedValue!)"]
             
         }
-        
         return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
     }
 

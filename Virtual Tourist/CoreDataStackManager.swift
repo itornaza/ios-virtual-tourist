@@ -20,11 +20,9 @@ class CoreDataStackManager {
      *  to a shared instance of the CoreDataStackManager class.
      */
     class func sharedInstance() -> CoreDataStackManager {
-        
         struct Static {
             static let instance = CoreDataStackManager()
         }
-    
         return Static.instance
     }
     
