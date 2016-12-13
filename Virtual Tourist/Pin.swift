@@ -36,18 +36,18 @@ class Pin: NSManagedObject {
     // MARK: - Constructors
     
     /// Standard Core Data init method
-    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
-        super.init(entity: entity, insertIntoManagedObjectContext: context)
+    override init(entity: NSEntityDescription, insertInto context: NSManagedObjectContext?) {
+        super.init(entity: entity, insertInto: context)
     }
     
     /// The two argument init method
     init(dictionary: [String : AnyObject], context: NSManagedObjectContext) {
         
         // Get the entity from the Virtual_Tourist.xcdatamodeld
-        let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)!
+        let entity = NSEntityDescription.entity(forEntityName: "Pin", in: context)!
         
         // Insert the new Pin into the Core Data Stack
-        super.init(entity: entity, insertIntoManagedObjectContext: context)
+        super.init(entity: entity, insertInto: context)
         
         // Initialize the Pin's properties from a dictionary
         latitude = (dictionary[Keys.Latitude] as? CLLocationDegrees)!

@@ -17,7 +17,7 @@ class PhotoAlbumCollectionViewCell: UICollectionViewCell {
     
     // MARK: - Properties
     
-    var taskToCancelifCellIsReused: NSURLSessionTask? {
+    var taskToCancelifCellIsReused: URLSessionTask? {
         
         didSet {
             if let taskToCancel = oldValue {

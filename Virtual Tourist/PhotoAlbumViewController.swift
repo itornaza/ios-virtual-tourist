@@ -30,8 +30,8 @@ class PhotoAlbumViewController: UIViewController,
         return CoreDataStackManager.sharedInstance().managedObjectContext
     }
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
-        let fetchRequest = NSFetchRequest(entityName: "Photo")
+    lazy var fetchedResultsController: NSFetchedResultsController<Photo> = {
+        let fetchRequest = NSFetchRequest<Photo>(entityName: "Photo")
         fetchRequest.sortDescriptors = []
         
         // Fetch only the photos for the selected pin
@@ -47,10 +47,10 @@ class PhotoAlbumViewController: UIViewController,
         }()
     
     // FetchedResultsController
-    var selectedIndexes = [NSIndexPath]()
-    var insertedIndexPaths: [NSIndexPath]!
-    var deletedIndexPaths: [NSIndexPath]!
-    var updatedIndexPaths: [NSIndexPath]!
+    var selectedIndexes = [IndexPath]()
+    var insertedIndexPaths: [IndexPath]!
+    var deletedIndexPaths: [IndexPath]!
+    var updatedIndexPaths: [IndexPath]!
     
     // MARK: - Outlets
     
@@ -66,7 +66,7 @@ class PhotoAlbumViewController: UIViewController,
         
         // Configure the UI
         self.configureUI()
-        self.newCollectionBarButton.enabled = false
+        self.newCollectionBarButton.isEnabled = false
         
         // Set the delegates
         self.collectionView.delegate = self
@@ -89,7 +89,7 @@ class PhotoAlbumViewController: UIViewController,
         }
     }
     
-    override func viewWillAppear(animated: Bool) {
+    override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
         if pin.photos.isEmpty {
@@ -102,8 +102,8 @@ class PhotoAlbumViewController: UIViewController,
                     
                     // Check if there are no images for this pin to update the UI
                     if self.pin.photos.count == 0 || self.pin.photos.isEmpty {
-                        dispatch_async(dispatch_get_main_queue()) {
-                            self.noImageLabel.hidden = false
+                        DispatchQueue.main.async {
+                            self.noImageLabel.isHidden = false
                         }
                     }
                 }
@@ -111,7 +111,7 @@ class PhotoAlbumViewController: UIViewController,
         }
     }
     
-    override func viewWillDisappear(animated: Bool) {
+    override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
         // Clear leftovers
@@ -120,30 +120,30 @@ class PhotoAlbumViewController: UIViewController,
     
     // MARK: - Actions
     
-    @IBAction func backButtonTouch(sender: AnyObject) {
+    @IBAction func backButtonTouch(_ sender: AnyObject) {
         
         // Show the Travel locations view controller
-        dispatch_async(dispatch_get_main_queue(), {
+        DispatchQueue.main.async(execute: {
             
             // Grab storyboard
             let storyboard = UIStoryboard (name: "Main", bundle: nil)
             
             // Get the destination controller from the storyboard id
-            let nextVC = storyboard.instantiateViewControllerWithIdentifier("TravelLocationsViewController")
+            let nextVC = storyboard.instantiateViewController(withIdentifier: "TravelLocationsViewController")
                 
             
             // Go to the destination controller
-            self.presentViewController(nextVC, animated: false, completion: nil)
+            self.present(nextVC, animated: false, completion: nil)
         })
     }
     
-    @IBAction func newCollectionButtonTouchUp(sender: AnyObject) {
+    @IBAction func newCollectionButtonTouchUp(_ sender: AnyObject) {
         
-        self.newCollectionBarButton.enabled = false
+        self.newCollectionBarButton.isEnabled = false
         
         // Remove the old collection
         for photo in fetchedResultsController.fetchedObjects as! [Photo] {
-            sharedContext.deleteObject(photo)
+            sharedContext.delete(photo)
         }
         
         // Update the pin's current page
@@ -155,7 +155,7 @@ class PhotoAlbumViewController: UIViewController,
                 self.alertView("Could not download images")
             } else {
                 // Save the new collection in core data
-                dispatch_async(dispatch_get_main_queue()) {
+                DispatchQueue.main.async {
                     CoreDataStackManager.sharedInstance().saveContext()
                 }
             }
@@ -165,33 +165,33 @@ class PhotoAlbumViewController: UIViewController,
     // MARK: - Alerts
     
     /// Throws an alert view to display error messages
-    func alertView(message: String) {
-        dispatch_async(dispatch_get_main_queue(), {
-            let alertController = UIAlertController(title: "Error!", message: message, preferredStyle: .Alert)
-            let dismiss = UIAlertAction(title: "Dismiss", style: .Default, handler: nil)
+    func alertView(_ message: String) {
+        DispatchQueue.main.async(execute: {
+            let alertController = UIAlertController(title: "Error!", message: message, preferredStyle: .alert)
+            let dismiss = UIAlertAction(title: "Dismiss", style: .default, handler: nil)
             alertController.addAction(dismiss)
-            self.presentViewController(alertController, animated: true, completion: nil)
+            self.present(alertController, animated: true, completion: nil)
         })
     }
     
     // MARK: - Collection View Delegate
     
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
         return self.fetchedResultsController.sections?.count ?? 0
     }
 
     /// Number of images in section
-    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         let sectionInfo = self.fetchedResultsController.sections![section] 
         return sectionInfo.numberOfObjects
     }
     
     /// Cell for item at index path
-    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath)
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath)
         -> UICollectionViewCell {
             
         // Dequeue a reusable cell from the table, using the correct “reuse identifier”
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath)
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
             as! PhotoAlbumCollectionViewCell
 
         self.configureCell(cell, indexPath: indexPath)
@@ -201,72 +201,72 @@ class PhotoAlbumViewController: UIViewController,
     }
     
     /// Did select item at index path to delete an image
-    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         
         // Local variables
         var photo: Photo // Holds the photo to be deleted
         
         // Define a cell
-        _ = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath)
+        _ = collectionView.dequeueReusableCell(withReuseIdentifier: "cell", for: indexPath)
             as! PhotoAlbumCollectionViewCell
         
         // Check for cell toggle condition
-        if let index = selectedIndexes.indexOf(indexPath) {
-            selectedIndexes.removeAtIndex(index)
+        if let index = selectedIndexes.index(of: indexPath) {
+            selectedIndexes.remove(at: index)
         } else {
             selectedIndexes.append(indexPath)
         }
         
         // Force the cell to reload!
         let paths = [indexPath]
-        self.collectionView.reloadItemsAtIndexPaths(paths)
+        self.collectionView.reloadItems(at: paths)
         
         // Locate the photo to delete from core data using the index
         // Note: Since we are deleting one image at a time, there shall be only one element in the selectedIndexes array
-        photo = fetchedResultsController.objectAtIndexPath(selectedIndexes.first!) as! Photo
+        photo = fetchedResultsController.object(at: selectedIndexes.first!) 
         
         do {
             // Remove the associated photo from disk and cache
-            try NSFileManager.defaultManager().removeItemAtPath(photo.posterPath)
+            try FileManager.default.removeItem(atPath: photo.posterPath)
         } catch _ {
         }
         photo.posterImage = nil // Triggers removal from the ImageCache
         
         // Remove the photo from core data
-        sharedContext.deleteObject(photo)
+        sharedContext.delete(photo)
         
         self.checkNewCollectionButton()
         
         // Save the change
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
             CoreDataStackManager.sharedInstance().saveContext()
         }
         
         // Reset the index array for reuse
-        selectedIndexes = [NSIndexPath]()
+        selectedIndexes = [IndexPath]()
     }
     
     // MARK: - Fetched Results Controller Delegate
     
     /// We are about to handle some new changes
-    func controllerWillChangeContent(controller: NSFetchedResultsController) {
+    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         
         // Start out with empty arrays for each change type
-        insertedIndexPaths = [NSIndexPath]()
-        deletedIndexPaths = [NSIndexPath]()
-        updatedIndexPaths = [NSIndexPath]()
+        insertedIndexPaths = [IndexPath]()
+        deletedIndexPaths = [IndexPath]()
+        updatedIndexPaths = [IndexPath]()
     }
     
     /// May be called multiple times, once for each photo object that is added, deleted, or changed. We store the index paths into the three arrays
-    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         switch type{
-        case .Insert:
+        case .insert:
             insertedIndexPaths.append(newIndexPath!)
             break
-        case .Delete:
+        case .delete:
             deletedIndexPaths.append(indexPath!)
             break
-        case .Update:
+        case .update:
             updatedIndexPaths.append(indexPath!)
             break
         default:
@@ -275,29 +275,29 @@ class PhotoAlbumViewController: UIViewController,
     }
     
     /// This method is invoked after all of the changed in the current batch have been collected into the three index path arrays (insert, delete, and upate). We now need to loop through the arrays and perform the changes. The most interesting thing about the method is the collection view's "performBatchUpdates" method. Notice that all of the changes are performed inside a closure that is handed to the collection view.
-    func controllerDidChangeContent(controller: NSFetchedResultsController) {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         collectionView.performBatchUpdates( { () -> Void in
             for indexPath in self.insertedIndexPaths {
-                self.collectionView.insertItemsAtIndexPaths([indexPath])
+                self.collectionView.insertItems(at: [indexPath])
             }
             for indexPath in self.deletedIndexPaths {
-                self.collectionView.deleteItemsAtIndexPaths([indexPath])
+                self.collectionView.deleteItems(at: [indexPath])
             }
             for indexPath in self.updatedIndexPaths {
-                self.collectionView.reloadItemsAtIndexPaths([indexPath])
+                self.collectionView.reloadItems(at: [indexPath])
             }
         }, completion: nil)
     }
     
     // MARK: - Helpers
     
-    func configureCell(cell: PhotoAlbumCollectionViewCell, indexPath: NSIndexPath) {
+    func configureCell(_ cell: PhotoAlbumCollectionViewCell, indexPath: IndexPath) {
             
         // Create a temporary variable  to hold the value that will be assigned to the cell imageView at the end of this func
         var posterImage = UIImage(named: "imagePlaceholder")
         
         // Get the indexed photo from the core data
-        let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
+        let photo = self.fetchedResultsController.object(at: indexPath) 
         
         // Branch on the state of the photo
         if photo.posterImage != nil {
@@ -317,7 +317,7 @@ class PhotoAlbumViewController: UIViewController,
                     self.alertView("Could not download images")
                     
                     // Handle UI elements on the main thread
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         cell.imageView.image =  UIImage(named: "imagePlaceholder")
                         cell.spinner.stopAnimating()
                     }
@@ -333,14 +333,14 @@ class PhotoAlbumViewController: UIViewController,
                     photo.downloaded = true
                     
                     // Update the cell and core data on main thread
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         cell.imageView.image = image
                         cell.spinner.stopAnimating()
                         CoreDataStackManager.sharedInstance().saveContext()
                     }
                     
                 } else {
-                    dispatch_async(dispatch_get_main_queue()) {
+                    DispatchQueue.main.async {
                         cell.imageView.image =  UIImage(named: "imagePlaceholder")
                         cell.spinner.stopAnimating()
                     }
@@ -356,7 +356,7 @@ class PhotoAlbumViewController: UIViewController,
     }
     
     /// Displays a pin at the desired location
-    func showPinOnMap(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
+    func showPinOnMap(_ latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
 
         // Set the delegate
         self.mapView.delegate = self
@@ -386,7 +386,7 @@ class PhotoAlbumViewController: UIViewController,
         
         // If all photos are downloaded, enable the collection button
         if downloaded.count < 1 {
-            self.newCollectionBarButton.enabled = true
+            self.newCollectionBarButton.isEnabled = true
         }
         
     }
@@ -417,6 +417,6 @@ class PhotoAlbumViewController: UIViewController,
     }
     
     func configureUI() {
-        self.collectionView.backgroundColor = UIColor.whiteColor()
+        self.collectionView.backgroundColor = UIColor.white
     }
 }

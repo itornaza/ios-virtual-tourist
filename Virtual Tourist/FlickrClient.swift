@@ -14,12 +14,12 @@ class FlickrClient: NSObject {
     
     // MARK: - Properties
     
-    var session: NSURLSession
+    var session: URLSession
     
     // MARK: - Session added to the default constructor
     
     override init() {
-        self.session = NSURLSession.sharedSession()
+        self.session = URLSession.shared
         super.init()
     }
 
@@ -49,7 +49,7 @@ class FlickrClient: NSObject {
     // MARK: - Methods
     
     /// Set the method arguments
-    func getMethodArguments(pin: Pin) -> [String: AnyObject] {
+    func getMethodArguments(_ pin: Pin) -> [String: AnyObject] {
         
         // Set the method arguments
         let methodArguments = [
@@ -68,41 +68,41 @@ class FlickrClient: NSObject {
     }
     
     /// Get the urls from the current pin page and save them to CoreData
-    func getPhotosURLs(pin: Pin, completionHandler: (success: Bool, errorString: String?) -> Void) {
+    func getPhotosURLs(_ pin: Pin, completionHandler: @escaping (_ success: Bool, _ errorString: String?) -> Void) {
         
             // Get the method arguments adjusted for the pin
             let methodArguments = self.getMethodArguments(pin)
             
             // Append the page to the method's arguments
             var withPageDictionary = methodArguments
-            withPageDictionary["page"] = pin.currentPage
+            withPageDictionary["page"] = pin.currentPage as AnyObject?
             
             // Create the session and the request
-            let session = NSURLSession.sharedSession()
+            let session = URLSession.shared
             let urlString = FlickrClient.Constants.BASE_URL + escapedParameters(withPageDictionary)
-            let url = NSURL(string: urlString)!
-            let request = NSURLRequest(URL: url)
+            let url = URL(string: urlString)!
+            let request = URLRequest(url: url)
             
-            let task = session.dataTaskWithRequest(request) { data, response, downloadError in
+            let task = session.dataTask(with: request, completionHandler: { data, response, downloadError in
                 
                 if let _ = downloadError {
                     
                     // Download failed
-                    completionHandler(success: false, errorString: "Could not complete the request)")
+                    completionHandler(false, "Could not complete the request)")
                 
                 } else {
                 
                     // Download succeeded
-                    let parsedResult = (try! NSJSONSerialization.JSONObjectWithData(
-                            data!,
-                            options: NSJSONReadingOptions.AllowFragments)) as! NSDictionary
+                    let parsedResult = (try! JSONSerialization.jsonObject(
+                            with: data!,
+                            options: JSONSerialization.ReadingOptions.allowFragments)) as! NSDictionary
                     
                     // Parse the page data
-                    if let photosDictionary = parsedResult.valueForKey("photos") as? [String:AnyObject] {
+                    if let photosDictionary = parsedResult.value(forKey: "photos") as? [String:AnyObject] {
                         
                         // Get the available pages for the pin and save it into core data
                         pin.totalPages = photosDictionary["pages"] as! Int
-                        dispatch_async(dispatch_get_main_queue()) {
+                        DispatchQueue.main.async {
                             CoreDataStackManager.sharedInstance().saveContext()
                         }
                         
@@ -123,9 +123,9 @@ class FlickrClient: NSObject {
                                         
                                         // Set up the dictionary to create the photo
                                         let dictionary: [String : AnyObject] = [
-                                            Photo.Keys.PosterPath : photo["url_m"] as! String,
-                                            Photo.Keys.Id : photo["id"] as! String,
-                                            Photo.Keys.Downloaded : false
+                                            Photo.Keys.PosterPath : photo["url_m"] as! String as AnyObject,
+                                            Photo.Keys.Id : photo["id"] as! String as AnyObject,
+                                            Photo.Keys.Downloaded : false as AnyObject
                                         ]
                                         
                                         // Initialize the photo
@@ -135,50 +135,50 @@ class FlickrClient: NSObject {
                                         photo.pin = pin
                                         
                                         // Save the photo into core data as a pre-fetch activity
-                                        dispatch_async(dispatch_get_main_queue()) {
+                                        DispatchQueue.main.async {
                                             CoreDataStackManager.sharedInstance().saveContext()
                                         }   
                                     }
                                 }
                                 
                                 // Request succeded with images
-                                completionHandler(success: true, errorString: nil)
+                                completionHandler(true, nil)
                                 
                             } else {
                                 
                                 // Request failed
-                                completionHandler(success: false, errorString: "Cant find key 'photo' in \(photosDictionary)")
+                                completionHandler(false, "Cant find key 'photo' in \(photosDictionary)")
                                 return
                             }
                         } else {
                             
                             // Request succeded with no images
-                            completionHandler(success: true, errorString: "No image found")
+                            completionHandler(true, "No image found")
                             return
                         }
                     } else {
                         
                         // Request failed
-                        completionHandler(success: false, errorString: "Cant find key 'photos' in \(parsedResult)")
+                        completionHandler(false, "Cant find key 'photos' in \(parsedResult)")
                         return
                     }
                 }
-            }
+            }) 
             
             task.resume()
     }
 
     /// Use task to download image data so it can be cancelled from the collection view cell
-    func taskForImage(filePath: String, completionHandler :(imageData:NSData?, error:NSError?) -> Void)-> NSURLSessionTask {
-        let url = NSURL(string: filePath)!
-        let request = NSURLRequest(URL: url)
-        let task = session.dataTaskWithRequest(request) { data, response, downloadError in
+    func taskForImage(_ filePath: String, completionHandler :@escaping (_ imageData:Data?, _ error:NSError?) -> Void)-> URLSessionTask {
+        let url = URL(string: filePath)!
+        let request = URLRequest(url: url)
+        let task = session.dataTask(with: request, completionHandler: { data, response, downloadError in
             if let error = downloadError {
-                completionHandler(imageData: nil, error: error)
+                completionHandler(nil, error as NSError?)
             } else {
-                completionHandler(imageData: data, error: nil)
+                completionHandler(data, nil)
             }
-        }
+        }) 
         task.resume()
         return task
     }
@@ -186,7 +186,7 @@ class FlickrClient: NSObject {
     // MARK: - Helpers
     
     /// Create the box on the map from which the images will be pulled
-    func createBoundingBoxString(pin: Pin) -> String {
+    func createBoundingBoxString(_ pin: Pin) -> String {
         
         // Convert coordinates to Double values to use with max and min
         let latitude = pin.latitude as Double
@@ -218,7 +218,7 @@ class FlickrClient: NSObject {
     }
     
     /// Given a dictionary of parameters, convert to a string for a url
-    func escapedParameters(parameters: [String : AnyObject]) -> String {
+    func escapedParameters(_ parameters: [String : AnyObject]) -> String {
         var urlVars = [String]()
         for (key, value) in parameters {
             
@@ -226,13 +226,13 @@ class FlickrClient: NSObject {
             let stringValue = "\(value)"
             
             // Escape it
-            let escapedValue = stringValue.stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
+            let escapedValue = stringValue.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)
             
             // Append it
             urlVars += [key + "=" + "\(escapedValue!)"]
             
         }
-        return (!urlVars.isEmpty ? "?" : "") + urlVars.joinWithSeparator("&")
+        return (!urlVars.isEmpty ? "?" : "") + urlVars.joined(separator: "&")
     }
 
 }

@@ -24,8 +24,8 @@ class TravelLocationsViewController: UIViewController, NSFetchedResultsControlle
         return CoreDataStackManager.sharedInstance().managedObjectContext
     }
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
-        let fetchRequest = NSFetchRequest(entityName: "Pin")
+    lazy var fetchedResultsController: NSFetchedResultsController<Pin> = {
+        let fetchRequest = NSFetchRequest<Pin>(entityName: "Pin")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: Pin.Keys.Longitude, ascending: true)]
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
@@ -39,9 +39,9 @@ class TravelLocationsViewController: UIViewController, NSFetchedResultsControlle
     
     /// A convenient property for the map persistence
     var filePath : String {
-        let manager = NSFileManager.defaultManager()
-        let url: NSURL = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
-        return url.URLByAppendingPathComponent("mapRegionArchive").path!
+        let manager = FileManager.default
+        let url: URL = manager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return url.appendingPathComponent("mapRegionArchive").path
     }
     
     // MARK: - Outlets
@@ -72,21 +72,21 @@ class TravelLocationsViewController: UIViewController, NSFetchedResultsControlle
     // MARK: - Core Data Helpers
 
     /// Add the dropped pin to Core Data on the main thread
-    func addPinToStack(coordinates: CLLocationCoordinate2D) {
+    func addPinToStack(_ coordinates: CLLocationCoordinate2D) {
         
         // Initialize the dictionary
         let dictionary: [String : AnyObject] = [
-            Pin.Keys.Latitude   : coordinates.latitude,
-            Pin.Keys.Longitude  : coordinates.longitude,
-            Pin.Keys.CurrentPage: 1,
-            Pin.Keys.TotalPages : 1
+            Pin.Keys.Latitude   : coordinates.latitude as AnyObject,
+            Pin.Keys.Longitude  : coordinates.longitude as AnyObject,
+            Pin.Keys.CurrentPage: 1 as AnyObject,
+            Pin.Keys.TotalPages : 1 as AnyObject
         ]
         
         // Create the pin using the dictionary
         _ = Pin(dictionary: dictionary, context: sharedContext)
         
         // Add pin to Core Data, on the main thread
-        dispatch_async(dispatch_get_main_queue()) {
+        DispatchQueue.main.async {
             CoreDataStackManager.sharedInstance().saveContext()
             
             do {
@@ -100,7 +100,7 @@ class TravelLocationsViewController: UIViewController, NSFetchedResultsControlle
 
 extension TravelLocationsViewController: UIGestureRecognizerDelegate {
     
-    func configureLongTap(duration: CFTimeInterval) {
+    func configureLongTap(_ duration: CFTimeInterval) {
         let longTap = UILongPressGestureRecognizer(
             target: self,
             action: #selector(TravelLocationsViewController.handleLongTap(_:))
@@ -110,9 +110,9 @@ extension TravelLocationsViewController: UIGestureRecognizerDelegate {
     }
     
     /// Drops a pin to the map at the tapped location
-    func handleLongTap(recognizer: UIGestureRecognizer) {
+    func handleLongTap(_ recognizer: UIGestureRecognizer) {
         
-        if (recognizer.state == UIGestureRecognizerState.Ended) {
+        if (recognizer.state == UIGestureRecognizerState.ended) {
             
             // Avoid to throw a second pin while doing the gesture
             self.mapView.removeGestureRecognizer(recognizer)
@@ -120,12 +120,12 @@ extension TravelLocationsViewController: UIGestureRecognizerDelegate {
         } else {
             
             // Get the tap location from the screen
-            let tapLocation = recognizer.locationInView(self.mapView)
+            let tapLocation = recognizer.location(in: self.mapView)
             
             // Get the map coordinates from the tap location
-            let coordinates: CLLocationCoordinate2D = self.mapView.convertPoint(
+            let coordinates: CLLocationCoordinate2D = self.mapView.convert(
                 tapLocation,
-                toCoordinateFromView: self.mapView
+                toCoordinateFrom: self.mapView
             )
             
             // Create the pin at the tap location
@@ -143,10 +143,10 @@ extension TravelLocationsViewController: UIGestureRecognizerDelegate {
 extension TravelLocationsViewController: MKMapViewDelegate {
     
     /// When the user taps on a dropped pin, we transit to the PhotoAlbumViewController and notify the controller about the selected pin
-    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         
         // Set the next view controller
-        let nextVC = storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumViewController") as!
+        let nextVC = storyboard!.instantiateViewController(withIdentifier: "PhotoAlbumViewController") as!
         PhotoAlbumViewController
         
         // Locate the pin object from map the annotation and
@@ -157,11 +157,11 @@ extension TravelLocationsViewController: MKMapViewDelegate {
         nextVC.pin = self.locatePinFromAnnotation(view.annotation!, storedPins: storedPins)
         
         // Segue to the next view controller
-        self.presentViewController(nextVC, animated: false, completion: nil)
+        self.present(nextVC, animated: false, completion: nil)
     }
     
     /// Get notified when the map region is changed
-    func mapView(mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         saveMapRegion()
     }
     
@@ -187,14 +187,14 @@ extension TravelLocationsViewController: MKMapViewDelegate {
     }
     
     /// Drop a pin given it's coordinates
-    func createAnnotation(coordinates: CLLocationCoordinate2D) {
+    func createAnnotation(_ coordinates: CLLocationCoordinate2D) {
         let annotation = MKPointAnnotation()
         annotation.coordinate = coordinates
         self.mapView.addAnnotation(annotation)
     }
     
     /// Locate a pin given its map coordinates
-    func locatePinFromAnnotation(annotation: MKAnnotation, storedPins: [Pin]!) -> Pin? {
+    func locatePinFromAnnotation(_ annotation: MKAnnotation, storedPins: [Pin]!) -> Pin? {
         
         // Get the coordinates of the pin from the map annotation
         let pinArray = storedPins.filter {
@@ -223,10 +223,10 @@ extension TravelLocationsViewController: MKMapViewDelegate {
     }
     
     /// Restore the last map center and span that the user selected
-    func restoreMapRegion(animated: Bool) {
+    func restoreMapRegion(_ animated: Bool) {
         
         // if we can unarchive a dictionary, we will use it to set the map back to its previous center and span
-        if let regionDictionary = NSKeyedUnarchiver.unarchiveObjectWithFile(filePath) as? [String : AnyObject] {
+        if let regionDictionary = NSKeyedUnarchiver.unarchiveObject(withFile: filePath) as? [String : AnyObject] {
             let longitude = regionDictionary["longitude"] as! CLLocationDegrees
             let latitude = regionDictionary["latitude"] as! CLLocationDegrees
             let center = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
