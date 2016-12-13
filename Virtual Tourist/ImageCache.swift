@@ -12,7 +12,7 @@ class ImageCache {
     
     // MARK: - Properties
     
-    fileprivate var inMemoryCache = NSCache()
+    fileprivate var inMemoryCache = NSCache<AnyObject, AnyObject>()
     
     // MARK: - Retreiving images
     
@@ -26,7 +26,7 @@ class ImageCache {
         let path = pathForIdentifier(identifier!)
         
         // First try the memory cache
-        if let image = inMemoryCache.object(forKey: path) as? UIImage {
+        if let image = inMemoryCache.object(forKey: path as AnyObject) as? UIImage {
             return image
         }
         
@@ -48,7 +48,7 @@ class ImageCache {
         
         // If the image is nil, remove images from the cache
         if image == nil {
-            inMemoryCache.removeObject(forKey: path)
+            inMemoryCache.removeObject(forKey: path as AnyObject)
             do {
                 try FileManager.default.removeItem(atPath: path)
             } catch _ {
@@ -57,7 +57,7 @@ class ImageCache {
         }
         
         // Otherwise, keep the image in memory
-        inMemoryCache.setObject(image!, forKey: path)
+        inMemoryCache.setObject(image!, forKey: path as AnyObject)
         
         // And in the Documents directory
         let data = UIImagePNGRepresentation(image!)

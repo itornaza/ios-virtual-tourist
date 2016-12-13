@@ -142,7 +142,7 @@ class PhotoAlbumViewController: UIViewController,
         self.newCollectionBarButton.isEnabled = false
         
         // Remove the old collection
-        for photo in fetchedResultsController.fetchedObjects as! [Photo] {
+        for photo in fetchedResultsController.fetchedObjects as [Photo]! {
             sharedContext.delete(photo)
         }
         
@@ -377,15 +377,15 @@ class PhotoAlbumViewController: UIViewController,
     func checkNewCollectionButton() {
         
         // Use core data to get the photos for the selected pin
-        let photos = fetchedResultsController.fetchedObjects as! [Photo]
+        let photos = fetchedResultsController.fetchedObjects as [Photo]!
     
         // Check if there is at least one that is not downloaded yet
-        let downloaded = photos.filter {
+        let downloaded = photos?.filter {
             $0.downloaded == false
         }
         
         // If all photos are downloaded, enable the collection button
-        if downloaded.count < 1 {
+        if (downloaded?.count)! < 1 {
             self.newCollectionBarButton.isEnabled = true
         }
         

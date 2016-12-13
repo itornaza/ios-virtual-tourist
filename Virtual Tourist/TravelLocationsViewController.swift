@@ -151,7 +151,7 @@ extension TravelLocationsViewController: MKMapViewDelegate {
         
         // Locate the pin object from map the annotation and
         // assign the pin to the destination view controller
-        let storedPins = fetchedResultsController.fetchedObjects as! [Pin]
+        let storedPins = fetchedResultsController.fetchedObjects as [Pin]!
         
         // Assign the selected pin to the next controller for handling
         nextVC.pin = self.locatePinFromAnnotation(view.annotation!, storedPins: storedPins)
@@ -177,10 +177,10 @@ extension TravelLocationsViewController: MKMapViewDelegate {
         }
         
         // Get the pins from the Core Data
-        let storedPins = fetchedResultsController.fetchedObjects as! [Pin]
+        let storedPins = fetchedResultsController.fetchedObjects as [Pin]!
         
         // Display a pin for each stored location
-        for pin in storedPins {
+        for pin in storedPins! {
             let coordinates = CLLocationCoordinate2D(latitude: pin.latitude, longitude: pin.longitude)
             self.createAnnotation(coordinates)
         }
